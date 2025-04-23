@@ -4,7 +4,8 @@ from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 
 from alembic import context
-from app.models.user_model import Base  # adjust "myapp.models" to the actual location of your Base
+from app.models.user_model import Base
+import settings.config
 
 
 # this is the Alembic Config object, which provides
@@ -40,7 +41,7 @@ def run_migrations_offline() -> None:
     script output.
 
     """
-    url = config.get_main_option("sqlalchemy.url")
+    url = settings.config.database_url  # use settings' database_url
     context.configure(
         url=url,
         target_metadata=target_metadata,
