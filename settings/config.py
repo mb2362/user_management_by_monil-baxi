@@ -40,12 +40,18 @@ class Settings(BaseSettings):
     smtp_port: int = Field(default=2525, description="SMTP port for sending emails")
     smtp_username: str = Field(default='your-mailtrap-username', description="Username for SMTP server")
     smtp_password: str = Field(default='your-mailtrap-password', description="Password for SMTP server")
-
+    # MinIO config
+    minio_endpoint: str = Field(..., env="MINIO_ENDPOINT")
+    minio_access_key: str = Field(..., env="MINIO_ACCESS_KEY")
+    minio_secret_key: str = Field(..., env="MINIO_SECRET_KEY")
+    minio_bucket_name: str = Field(..., env="MINIO_BUCKET_NAME")
+    minio_secure: bool = Field(..., env="MINIO_SECURE")
 
     class Config:
         # If your .env file is not in the root directory, adjust the path accordingly.
         env_file = ".env"
         env_file_encoding = 'utf-8'
+        extra = "allow"
 
 # Instantiate settings to be imported in your application
 settings = Settings()
