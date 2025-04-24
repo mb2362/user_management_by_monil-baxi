@@ -21,6 +21,7 @@ from uuid import uuid4
 
 # Third-party imports
 import pytest
+import os
 from fastapi.testclient import TestClient
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
@@ -238,3 +239,18 @@ def email_service():
         mock_service.send_verification_email.return_value = None
         mock_service.send_user_email.return_value = None
         return mock_service
+
+
+@pytest.fixture(autouse=True)
+def mock_minio_env_vars():
+    os.environ["MINIO_ENDPOINT"] = "localhost:9000"
+    os.environ["MINIO_ACCESS_KEY"] = "minioadmin"
+    os.environ["MINIO_SECRET_KEY"] = "minioadminy"
+    os.environ["MINIO_BUCKET_NAME"] = "user-profile-pictures"
+    os.environ["MINIO_SECURE"] = "False"
+    yield
+    del os.environ["MINIO_ENDPOINT"]
+    del os.environ["MINIO_ACCESS_KEY"]
+    del os.environ["MINIO_SECRET_KEY"]
+    del os.environ["MINIO_BUCKET_NAME"]
+    del os.environ["MINIO_SECURE"]
