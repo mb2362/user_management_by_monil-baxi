@@ -18,7 +18,6 @@ class Settings(BaseSettings):
     debug: bool = Field(default=False, description="Debug mode outputs errors and sqlalchemy queries")
     jwt_secret_key: str = "a_very_secret_key"
     jwt_algorithm: str = "HS256"
-    access_token_expire_minutes: int = 15  # 15 minutes for access token
     refresh_token_expire_minutes: int = 1440  # 24 hours for refresh token
     # Database configuration
     database_url: str = Field(default='postgresql+asyncpg://user1:password@postgres/myappdb', description="URL for connecting to the database", env="DATABASE_URL")
