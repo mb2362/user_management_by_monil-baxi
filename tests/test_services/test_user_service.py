@@ -1,8 +1,7 @@
 from builtins import range
 import pytest
-from sqlalchemy import select
 from app.dependencies import get_settings
-from app.models.user_model import User, UserRole
+from app.models.user_model import UserRole
 from app.services.user_service import UserService
 from app.utils.nickname_gen import generate_nickname
 

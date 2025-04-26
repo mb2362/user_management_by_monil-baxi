@@ -108,6 +108,7 @@ async def locked_user(db_session):
     user = User(**user_data)
     db_session.add(user)
     await db_session.commit()
+    await db_session.refresh(user)
     return user
 
 @pytest.fixture(scope="function")
@@ -125,6 +126,7 @@ async def user(db_session):
     user = User(**user_data)
     db_session.add(user)
     await db_session.commit()
+    await db_session.refresh(user)
     return user
 
 @pytest.fixture(scope="function")
@@ -142,6 +144,7 @@ async def verified_user(db_session):
     user = User(**user_data)
     db_session.add(user)
     await db_session.commit()
+    await db_session.refresh(user)
     return user
 
 @pytest.fixture(scope="function")
@@ -159,6 +162,7 @@ async def unverified_user(db_session):
     user = User(**user_data)
     db_session.add(user)
     await db_session.commit()
+    await db_session.refresh(user)
     return user
 
 @pytest.fixture(scope="function")
@@ -179,6 +183,7 @@ async def users_with_same_role_50_users(db_session):
         db_session.add(user)
         users.append(user)
     await db_session.commit()
+    await db_session.refresh(user)
     return users
 
 @pytest.fixture
@@ -194,6 +199,7 @@ async def admin_user(db_session: AsyncSession):
     )
     db_session.add(user)
     await db_session.commit()
+    await db_session.refresh(user)
     return user
 
 @pytest.fixture
@@ -209,6 +215,7 @@ async def manager_user(db_session: AsyncSession):
     )
     db_session.add(user)
     await db_session.commit()
+    await db_session.refresh(user)
     return user
 
 # Configure a fixture for each type of user role you want to test
