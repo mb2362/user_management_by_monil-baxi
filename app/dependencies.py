@@ -14,6 +14,7 @@ from app.services.jwt_service import decode_token
 from settings.config import Settings
 from fastapi import Depends
 from app.core.minio_client import client as minio_client
+
 # Load environment variables from .env file
 load_dotenv()
 
