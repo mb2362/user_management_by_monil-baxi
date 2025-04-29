@@ -1,53 +1,134 @@
+# Project Setup and Configuration
 
+This project includes a comprehensive setup involving multiple services such as MinIO for object storage and PostgreSQL for data management. The Docker-based configuration ensures that all services communicate seamlessly, with explicit network bindings and persistent storage volumes.
 
-# The User Management System Final Project: Your Epic Coding Adventure Awaits! 🎉✨🔥
+## Issues Addressed
 
-## Introduction: Buckle Up for the Ride of a Lifetime 🚀🎬
+1. **Container Names:**
+   - Explicit `container_name` settings were added to all services to ensure predictable service names for service discovery, logging, and debugging.
 
-Welcome to the User Management System project - an epic open-source adventure crafted by the legendary Professor Keith Williams for his rockstar students at NJIT! 🏫👨‍🏫⭐ This project is your gateway to coding glory, providing a bulletproof foundation for a user management system that will blow your mind! 🤯 You'll bridge the gap between the realms of seasoned software pros and aspiring student developers like yourselves. 
+2. **MinIO Service:**
+   - A MinIO service was added for object storage with ports 9000 (MinIO server) and 9001 (console).
+   - Environment variables for MinIO root credentials were set, and a volume was added for persistent storage.
 
-### [Instructor Video - Project Overview and Tips](https://youtu.be/gairLNAp6mA) 🎥
+3. **Volume Mounts:**
+   - Persistent storage volumes were defined for MinIO data storage (`minio_data`), alongside existing volumes for PostgreSQL (`postgres-data`) and pgAdmin (`pgadmin-data`).
 
-- [Introduction to the system features and overview of the project - please read](system_documentation.md) 📚
-- [Project Setup Instructions](setup.md) ⚒️
-- [Features to Select From](features.md) 🛠️
-- [About the Project](about.md)🔥🌟
+4. **PostgreSQL User:**
+   - The PostgreSQL user configuration was standardized across the project. A custom user (`user1`) was defined to ensure clarity and consistency.
 
-## Goals and Objectives: Unlock Your Coding Superpowers 🎯🏆🌟
+5. **Network Configuration:**
+   - Explicit network configurations were added to ensure all services are correctly isolated and can communicate with each other within the same network.
 
-Get ready to ascend to new heights with this legendary project:
+## Prerequisites
 
-1. **Practical Experience**: Dive headfirst into a real-world codebase, collaborate with your teammates, and contribute to an open-source project like a seasoned pro! 💻👩‍💻🔥
-2. **Quality Assurance**: Develop ninja-level skills in identifying and resolving bugs, ensuring your code quality and reliability are out of this world. 🐞🔍⚡
-3. **Test Coverage**: Write additional tests to cover edge cases, error scenarios, and important functionalities - leave no stone unturned and no bug left behind! ✅🧪🕵️‍♂️
-4. **Feature Implementation**: Implement a brand new, mind-blowing feature and make your epic mark on the project, following best practices for coding, testing, and documentation like a true artisan. ✨🚀🎆
-5. **Collaboration**: Foster teamwork and collaboration through code reviews, issue tracking, and adhering to contribution guidelines - teamwork makes the dream work, and together you'll conquer worlds! 🤝💪🌍
-6. **Industry Readiness**: Prepare for the software industry by working on a project that simulates real-world development scenarios - level up your skills to super hero status  and become an unstoppable coding force! 🔝🚀🏆⚡
+Before you begin, ensure you have the following installed:
+- Docker
+- Docker Compose
 
-## Submission and Grading: Your Chance to Shine 📝✏️📈
+## Configuration
 
-1. **Reflection Document**: Submit a 1-2 page Word document reflecting on your learnings throughout the course and your experience working on this epic project. Include links to the closed issues for the **5 QA issues, 10 NEW tests, and 1 Feature** you'll be graded on. Make sure your project successfully deploys to DockerHub and include a link to your Docker repository in the document - let your work speak for itself! 📄🔗💥
+### Docker Compose File
 
-2. **Commit History**: Show off your consistent hard work through your commit history like a true coding warrior. **Projects with less than 10 commits will get an automatic 0 - ouch!** 😬⚠️ A significant part of your project's evaluation will be based on your use of issues, commits, and following a professional development process like a boss - prove your coding prowess! 💻🔄🔥
+Ensure that your `docker-compose.yml` includes the following configurations:
 
-3. **Deployability**: Broken projects that don't deploy to Dockerhub or pass all the automated tests on GitHub actions will face point deductions - nobody likes a buggy app! 🐞☠️ Show the world your flawless coding skills!
+```yaml
+version: "3.7"
 
-## Managing the Project Workload: Stay Focused, Stay Victorious ⏱️🧠⚡
+services:
+  # MinIO Service for Object Storage
+  minio:
+    container_name: minio-service
+    image: minio/minio
+    environment:
+      - MINIO_ROOT_USER=your-access-key
+      - MINIO_ROOT_PASSWORD=your-secret-key
+    volumes:
+      - minio_data:/data
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    networks:
+      - app-network
 
-This project requires effective time management and a well-planned strategy, but fear not - you've got this! Follow these steps to ensure a successful (and sane!) project outcome:
+  # PostgreSQL Service
+  postgres:
+    container_name: postgres-db
+    image: postgres:13
+    environment:
+      - POSTGRES_USER=user1
+      - POSTGRES_PASSWORD=your-password
+      - POSTGRES_DB=your-db
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - app-network
 
-1. **Select a Feature**: [Choose a feature](features.md) from the provided list of additional improvements that sparks your interest and aligns with your goals like a laser beam. ✨⭐🎯 This is your chance to shine!
+  # pgAdmin Service
+  pgadmin:
+    container_name: pgadmin
+    image: dpage/pgadmin4
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=admin@admin.com
+      - PGADMIN_DEFAULT_PASSWORD=your-password
+    ports:
+      - "5050:80"
+    networks:
+      - app-network
 
-2. **Quality Assurance (QA)**: Thoroughly test the system's major functionalities related to your chosen feature and identify at least 5 issues or bugs like a true detective. Create GitHub issues for each identified problem, providing detailed descriptions and steps to reproduce - the more detail, the merrier! 🔍🐞🕵️‍♀️ Leave no stone unturned!
+networks:
+  app-network:
+    driver: bridge
 
-3. **Test Coverage Improvement**: Review the existing test suite and identify gaps in test coverage like a pro. Create 10 additional tests to cover edge cases, error scenarios, and important functionalities related to your chosen feature. Focus on areas such as user registration, login, authorization, and database interactions. Simulate the setup of the system as the admin user, then creating users, and updating user accounts - leave no stone unturned, no bug left behind! ✅🧪🔍🔬 Become the master of testing!
+volumes:
+  minio_data:
+  postgres-data:
+  pgadmin-data:
+```
 
-4. **New Feature Implementation**: Implement your chosen feature, following the project's coding practices and architecture like a coding ninja. Write appropriate tests to ensure your new feature is functional and reliable like a rock. Document the new feature, including its usage, configuration, and any necessary migrations - future you will thank you profusely! 🚀✨📝👩‍💻⚡ Make your mark on this project!
+## Network Configuration
+We define a custom network app-network to ensure that all services can communicate with each other securely. This ensures that the services are isolated and do not interfere with other containers running on the system.
 
-5. **Maintain a Working Main Branch**: Throughout the project, ensure you always have a working main branch deploying to Docker like a well-oiled machine. This will prevent any last-minute headaches and ensure a smooth submission process - no tears allowed, only triumphs! 😊🚢⚓ Stay focused, stay victorious!
+## MinIO Service
+The MinIO service is configured with root credentials and persistent storage. MinIO can be accessed via the following ports:
 
-Remember, it's more important to make something work reliably and be reasonably complete than to implement an overly complex feature. Focus on creating a feature that you can build upon or demonstrate in an interview setting - show off your skills like a rockstar! 💪🚀🎓
+MinIO Server: http://localhost:9000
 
-Don't forget to always have a working main branch deploying to Docker at all times. If you always have a working main branch, you will never be in jeopardy of receiving a very disappointing grade :-). Keep that main branch shining bright!
+MinIO Console: http://localhost:9001
 
-Let's embark on this epic coding adventure together and conquer the world of software engineering! You've got this, coding rockstars! 🚀🌟✨
+PostgreSQL and pgAdmin
+The PostgreSQL service uses a custom user user1 for database access. pgAdmin is set up for easy management of PostgreSQL via a web interface, accessible at:
+
+pgAdmin: http://localhost:5050
+
+Running the Application
+To get the project up and running, use the following steps:
+
+## Clone the repository to your local machine:
+
+```sh
+git clone https://github.com/yourusername/your-repo.git
+cd your-repo
+```
+
+## Build and start the services:
+
+```sh
+docker compose up -d
+```
+## Access the services:
+
+MinIO Console: http://localhost:9001
+
+pgAdmin: http://localhost:5050
+
+PostgreSQL: your-db (configured in docker-compose.yml)
+
+To stop the services:
+
+```sh
+docker compose down
+```
+
+## Conclusion
+This configuration ensures proper networking, persistent storage, and clear service definitions for better predictability and reliability. Each service is isolated within its own network, and volume mounts are defined to retain data even after containers are restarted.
