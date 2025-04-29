@@ -127,7 +127,7 @@ PostgreSQL: your-db (configured in docker-compose.yml)
 To stop the services:
 
 ```sh
-docker compose down
+docker compose down -v
 ```
 
 ## Conclusion
