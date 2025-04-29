@@ -1,53 +1,268 @@
+### Reflection on Learnings and Project Experience
+
+Over the duration of this course, I have gained significant hands-on experience in designing, building, testing, and deploying real-world software applications. Through lectures, assignments, and this final project, I have deepened my understanding of full-cycle development practices including backend development with FastAPI, database interaction with SQLAlchemy, authentication and authorization using JWTs, and advanced testing methodologies with Pytest and HTTPX.
+
+Working on the final project was both challenging and rewarding. I faced several technical hurdles such as resolving circular imports in modular Python applications, configuring asynchronous database interactions, and ensuring the CI/CD pipeline was stable. Each challenge became an opportunity to dive deeper into debugging, reading documentation, and improving my problem-solving skills.
+
+I also learned the importance of containerization with Docker and the value of using automated pipelines (GitHub Actions) to catch bugs early and maintain code quality. Deploying the application to DockerHub taught me the significance of proper authentication, tagging images correctly, and making sure the application builds in different environments consistently.
+
+Finally, I understood the importance of issue tracking, branching strategies, commit discipline, and QA testing as part of a professional development workflow — vital skills for any software engineer.
+
+### Links to Project Work
+
+## 5 QA Issues (Closed):
+
+[QA Issue #1](https://github.com/mb2362/user_management_by_monil-baxi/tree/6-bug-refactor-authentication-and-minio-client-integration)
+
+[QA Issue #2](https://github.com/mb2362/user_management_by_monil-baxi/tree/8-fix-typeerror-username-is-an-invalid-keyword-argument-for-user-in-test_user_profile_picpy)
+
+[QA Issue #3](https://github.com/mb2362/user_management_by_monil-baxi/tree/10-fix-jwt-token-creation-and-decoding-issue)
+
+[QA Issue #4](https://github.com/mb2362/user_management_by_monil-baxi/tree/12-fix-user-role-assignment-during-user-creation)
+
+[QA Issue #5](https://github.com/mb2362/user_management_by_monil-baxi/tree/14-fix-error-handling-and-file-upload-for-profile-picture---minio-integration)
+
+[QA Issue #6](https://github.com/mb2362/user_management_by_monil-baxi/tree/16-bug-missing-service-configuration-and-networking-issues)
+
+## 10 New Test Cases:
+
+```sh
+
+from PIL import Image
+import uuid
+import pytest
+from fastapi.testclient import TestClient
+from unittest.mock import AsyncMock, MagicMock, patch
+from app.models.user_model import User, UserRole
+from app.services.user_service import UserService
+from io import BytesIO
+from fastapi import HTTPException
+from app.core.config import (MINIO_BUCKET_NAME)
+
+@pytest.fixture
+def db():
+    # Create and return a mock database session with async methods
+    mock_db = MagicMock()
+    # Ensure the commit and refresh methods are async and return a value
+    mock_db.commit = AsyncMock(return_value=None)  # Mock async commit
+    mock_db.refresh = AsyncMock(return_value=None)  # Mock async refresh
+    mock_db.add = MagicMock()  # Regular method call, not async
+    mock_db.close = MagicMock()  # Regular method call, not async
+    yield mock_db
 
 
-# The User Management System Final Project: Your Epic Coding Adventure Awaits! 🎉✨🔥
+@pytest.fixture
+def minio_client_mock():
+    # Create and return a mocked MinIO client with async methods
+    mock_minio = MagicMock()
+    # Simulate a successful object upload (you can update this with more specific behavior)
+    mock_minio.put_object = MagicMock(return_value="http://mocked_endpoint/mock_bucket/profile.jpg")
+    # Simulate delete operation (you can adjust for other scenarios)
+    mock_minio.delete_object = MagicMock(return_value=None)
+    # You can also add any other MinIO methods needed
+    mock_minio.bucket_name = "mock_bucket"
+    mock_minio.endpoint = "http://mocked_endpoint"
+    yield mock_minio
 
-## Introduction: Buckle Up for the Ride of a Lifetime 🚀🎬
 
-Welcome to the User Management System project - an epic open-source adventure crafted by the legendary Professor Keith Williams for his rockstar students at NJIT! 🏫👨‍🏫⭐ This project is your gateway to coding glory, providing a bulletproof foundation for a user management system that will blow your mind! 🤯 You'll bridge the gap between the realms of seasoned software pros and aspiring student developers like yourselves. 
+@pytest.mark.asyncio
+async def test_upload_profile_picture(db, minio_client_mock):
+    user = User(
+        id=uuid.uuid4(),
+        nickname="TestNickname",
+        username="testuser",
+        email="testuser@example.com",
+        hashed_password="hashedpassword",
+        role=UserRole.ADMIN
+    )
+    db.add(user)
+    await db.commit()
+    await db.refresh(user)
 
-### [Instructor Video - Project Overview and Tips](https://youtu.be/gairLNAp6mA) 🎥
+    # Simulate a valid profile picture file (JPEG format)
+    file = MagicMock()
+    file.filename = "profile.jpg"
+    file.content_type = "image/jpeg"
+    file.file = BytesIO(b"valid image content")
 
-- [Introduction to the system features and overview of the project - please read](system_documentation.md) 📚
-- [Project Setup Instructions](setup.md) ⚒️
-- [Features to Select From](features.md) 🛠️
-- [About the Project](about.md)🔥🌟
+    # Mock the bucket_exists method to simulate a bucket existing
+    minio_client_mock.bucket_exists.return_value = False  # Simulating that the bucket doesn't exist
 
-## Goals and Objectives: Unlock Your Coding Superpowers 🎯🏆🌟
+    with patch.object(Image, 'open', return_value=MagicMock(spec=Image.Image)) as mock_open:
+        updated_user = await UserService.upload_profile_picture(user, db, file, minio_client_mock)
 
-Get ready to ascend to new heights with this legendary project:
+    # Verify the MinIO call to create the bucket
+    minio_client_mock.make_bucket.assert_called_once_with(MINIO_BUCKET_NAME)
 
-1. **Practical Experience**: Dive headfirst into a real-world codebase, collaborate with your teammates, and contribute to an open-source project like a seasoned pro! 💻👩‍💻🔥
-2. **Quality Assurance**: Develop ninja-level skills in identifying and resolving bugs, ensuring your code quality and reliability are out of this world. 🐞🔍⚡
-3. **Test Coverage**: Write additional tests to cover edge cases, error scenarios, and important functionalities - leave no stone unturned and no bug left behind! ✅🧪🕵️‍♂️
-4. **Feature Implementation**: Implement a brand new, mind-blowing feature and make your epic mark on the project, following best practices for coding, testing, and documentation like a true artisan. ✨🚀🎆
-5. **Collaboration**: Foster teamwork and collaboration through code reviews, issue tracking, and adhering to contribution guidelines - teamwork makes the dream work, and together you'll conquer worlds! 🤝💪🌍
-6. **Industry Readiness**: Prepare for the software industry by working on a project that simulates real-world development scenarios - level up your skills to super hero status  and become an unstoppable coding force! 🔝🚀🏆⚡
 
-## Submission and Grading: Your Chance to Shine 📝✏️📈
+@pytest.mark.asyncio
+async def test_upload_profile_picture(db, minio_client_mock):
+    user = User(
+        id=uuid.uuid4(),
+        nickname="TestNickname",
+        username="testuser",
+        email="testuser@example.com",
+        hashed_password="hashedpassword",
+        role=UserRole.ADMIN
+    )
+    db.add(user)
+    await db.commit()
+    await db.refresh(user)
 
-1. **Reflection Document**: Submit a 1-2 page Word document reflecting on your learnings throughout the course and your experience working on this epic project. Include links to the closed issues for the **5 QA issues, 10 NEW tests, and 1 Feature** you'll be graded on. Make sure your project successfully deploys to DockerHub and include a link to your Docker repository in the document - let your work speak for itself! 📄🔗💥
+    # Simulate a valid profile picture file (JPEG format)
+    file = MagicMock()
+    file.filename = "profile.jpg"
+    file.content_type = "image/jpeg"
+    file.file = BytesIO(b"valid image content")
 
-2. **Commit History**: Show off your consistent hard work through your commit history like a true coding warrior. **Projects with less than 10 commits will get an automatic 0 - ouch!** 😬⚠️ A significant part of your project's evaluation will be based on your use of issues, commits, and following a professional development process like a boss - prove your coding prowess! 💻🔄🔥
+    with patch.object(Image, 'open', return_value=MagicMock(spec=Image.Image)) as mock_open:
+        updated_user = await UserService.upload_profile_picture(user, db, file, minio_client_mock)
+        # Further assertions can go here
 
-3. **Deployability**: Broken projects that don't deploy to Dockerhub or pass all the automated tests on GitHub actions will face point deductions - nobody likes a buggy app! 🐞☠️ Show the world your flawless coding skills!
 
-## Managing the Project Workload: Stay Focused, Stay Victorious ⏱️🧠⚡
+@pytest.mark.asyncio
+async def test_upload_profile_picture_invalid_format(db, minio_client_mock):
+    user = User(
+        id=uuid.uuid4(),
+        nickname="TestNickname",
+        username="testuser",
+        email="testuser@example.com",
+        hashed_password="hashedpassword",
+        role=UserRole.ADMIN  # Set role to 'ADMIN'
+    )
+    db.add(user)
+    await db.commit()
+    await db.refresh(user)
 
-This project requires effective time management and a well-planned strategy, but fear not - you've got this! Follow these steps to ensure a successful (and sane!) project outcome:
+    # Simulate an invalid profile picture file (e.g., a non-image file)
+    file = MagicMock()
+    file.filename = "profile.txt"
+    file.content_type = "text/plain"
+    file.file = BytesIO(b"dummy text content")
 
-1. **Select a Feature**: [Choose a feature](features.md) from the provided list of additional improvements that sparks your interest and aligns with your goals like a laser beam. ✨⭐🎯 This is your chance to shine!
+    # Call the upload_profile_picture method and expect a 400 error (invalid file format)
+    with pytest.raises(HTTPException, match="Invalid file format"):
+        await UserService.upload_profile_picture(user, db, file, minio_client_mock)
 
-2. **Quality Assurance (QA)**: Thoroughly test the system's major functionalities related to your chosen feature and identify at least 5 issues or bugs like a true detective. Create GitHub issues for each identified problem, providing detailed descriptions and steps to reproduce - the more detail, the merrier! 🔍🐞🕵️‍♀️ Leave no stone unturned!
 
-3. **Test Coverage Improvement**: Review the existing test suite and identify gaps in test coverage like a pro. Create 10 additional tests to cover edge cases, error scenarios, and important functionalities related to your chosen feature. Focus on areas such as user registration, login, authorization, and database interactions. Simulate the setup of the system as the admin user, then creating users, and updating user accounts - leave no stone unturned, no bug left behind! ✅🧪🔍🔬 Become the master of testing!
+@pytest.mark.asyncio
+async def test_upload_profile_picture_large_file(db, minio_client_mock):
+    user = User(
+        id=uuid.uuid4(),
+        nickname="TestNickname",
+        username="testuser",
+        email="testuser@example.com",
+        hashed_password="hashedpassword",
+        role=UserRole.ADMIN  # Set role to 'ADMIN'
+    )
+    db.add(user)
+    await db.commit()
+    await db.refresh(user)
 
-4. **New Feature Implementation**: Implement your chosen feature, following the project's coding practices and architecture like a coding ninja. Write appropriate tests to ensure your new feature is functional and reliable like a rock. Document the new feature, including its usage, configuration, and any necessary migrations - future you will thank you profusely! 🚀✨📝👩‍💻⚡ Make your mark on this project!
+    # Simulate a large profile picture file (e.g., 10MB file)
+    file = MagicMock()
+    file.filename = "large_profile.jpg"
+    file.content_type = "image/jpeg"
+    file.file = BytesIO(b"dummy" * 10 * 1024 * 1024)  # 10MB content
 
-5. **Maintain a Working Main Branch**: Throughout the project, ensure you always have a working main branch deploying to Docker like a well-oiled machine. This will prevent any last-minute headaches and ensure a smooth submission process - no tears allowed, only triumphs! 😊🚢⚓ Stay focused, stay victorious!
+    # Call the upload_profile_picture method and expect a 400 error (file too large)
+    with pytest.raises(HTTPException, match="File is too large"):
+        await UserService.upload_profile_picture(user, db, file, minio_client_mock)
 
-Remember, it's more important to make something work reliably and be reasonably complete than to implement an overly complex feature. Focus on creating a feature that you can build upon or demonstrate in an interview setting - show off your skills like a rockstar! 💪🚀🎓
 
-Don't forget to always have a working main branch deploying to Docker at all times. If you always have a working main branch, you will never be in jeopardy of receiving a very disappointing grade :-). Keep that main branch shining bright!
+@pytest.mark.asyncio
+async def test_upload_profile_picture_minio_error(db, minio_client_mock):
+    user = User(
+        id=uuid.uuid4(),
+        nickname="TestNickname",
+        username="testuser",
+        email="testuser@example.com",
+        hashed_password="hashedpassword",
+        role=UserRole.ADMIN  # Set role to 'ADMIN'
+    )
+    db.add(user)
+    await db.commit()
+    await db.refresh(user)
 
-Let's embark on this epic coding adventure together and conquer the world of software engineering! You've got this, coding rockstars! 🚀🌟✨
+    # Simulate a profile picture file
+    file = MagicMock()
+    file.filename = "profile.jpg"
+    file.content_type = "image/jpeg"
+    file.file = BytesIO(b"dummy image content")
+
+    # Simulate a MinIO error (e.g., connection issue)
+    minio_client_mock.put_object = MagicMock(side_effect=Exception("MinIO connection failed"))
+
+    # Call the upload_profile_picture method, expecting an exception due to MinIO error
+    with pytest.raises(HTTPException, match="Error uploading profile picture"):
+        await UserService.upload_profile_picture(user, db, file, minio_client_mock)
+
+
+```
+
+## Feature Implementation:
+
+Feature branch : https://github.com/mb2362/user_management_by_monil-baxi/tree/feature
+
+## DockerHub Deployment
+
+DockerHub Repository Link:
+https://hub.docker.com/layers/monilbaxi/final-term/latest/images/sha256:fae0492b00f830eec18a7c17494289e11c5ed62a8569a0bd9bff73c12977d940?tab=layers
+
+The project has been successfully containerized and pushed to DockerHub. The latest stable image is publicly available and ready to deploy in any containerized environment.
+
+---
+📂 Project Structure
+# Project Structure
+
+This document provides an overview of the project's directory structure and key files.
+
+## Root Directory
+
+```
+FINAL-TERM [WSL: UBUNTU]
+├── .github/                     # GitHub related files (e.g., workflows, issue templates)
+├── .pytest_cache/               # Pytest cache directory
+├── alembic/                     # Database migration scripts
+├── app/                         # Main application code
+│   ├── _pycache_/               # Python bytecode cache
+│   ├── core/                    # Core application functionality
+│   ├── models/                  # Database models
+│   ├── routers/                 # API route definitions
+│   ├── schemas/                 # Pydantic schemas for data validation
+│   ├── services/                # Business logic services
+│   ├── utils/                   # Utility functions and helpers
+│   ├── __init__.py              # Package initializer
+│   ├── database.py              # Database connection and session management
+│   ├── dependencies.py          # Dependency injection definitions
+│   └── main.py                  # Application entry point
+├── email_templates/             # Email template files
+├── nginx/                       # Nginx configuration files
+├── settings/                    # Application settings and configurations
+├── tests/                       # Test files
+├── venv/                        # Python virtual environment
+├── .dockerignore                # Files to exclude from Docker builds
+├── .env                         # Environment variables (not in version control)
+├── .env.sample                  # Sample environment variables template
+├── .gitignore                   # Git ignore patterns
+├── about.md                     # Project description and about information
+├── alembic.ini                  # Alembic configuration file
+├── docker-compose.yml           # Docker Compose configuration
+├── docker.md                    # Docker usage documentation
+├── Dockerfile                   # Docker container definition
+├── features.md                  # Feature documentation
+├── finalproject.md              # Final project documentation
+├── git.md                       # Git workflow documentation
+├── license.txt                  # Project license
+├── logging.conf                 # Logging configuration
+├── project_agile_req.md         # Agile requirements documentation
+├── project_structure.txt        # Plain text version of project structure
+├── pytest.ini                   # Pytest configuration
+├── readme.md                    # Main project documentation
+└── requirements.txt             # Python dependencies
+```
+---
+
+✨ Author
+
+Developed by mb2362
