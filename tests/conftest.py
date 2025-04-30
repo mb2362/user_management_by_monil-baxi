@@ -21,6 +21,7 @@ from uuid import uuid4
 
 # Third-party imports
 import pytest
+import os
 from fastapi.testclient import TestClient
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
@@ -107,6 +108,7 @@ async def locked_user(db_session):
     user = User(**user_data)
     db_session.add(user)
     await db_session.commit()
+    await db_session.refresh(user)
     return user
 
 @pytest.fixture(scope="function")
@@ -124,6 +126,7 @@ async def user(db_session):
     user = User(**user_data)
     db_session.add(user)
     await db_session.commit()
+    await db_session.refresh(user)
     return user
 
 @pytest.fixture(scope="function")
@@ -141,6 +144,7 @@ async def verified_user(db_session):
     user = User(**user_data)
     db_session.add(user)
     await db_session.commit()
+    await db_session.refresh(user)
     return user
 
 @pytest.fixture(scope="function")
@@ -158,6 +162,7 @@ async def unverified_user(db_session):
     user = User(**user_data)
     db_session.add(user)
     await db_session.commit()
+    await db_session.refresh(user)
     return user
 
 @pytest.fixture(scope="function")
@@ -178,6 +183,7 @@ async def users_with_same_role_50_users(db_session):
         db_session.add(user)
         users.append(user)
     await db_session.commit()
+    await db_session.refresh(user)
     return users
 
 @pytest.fixture
@@ -193,6 +199,7 @@ async def admin_user(db_session: AsyncSession):
     )
     db_session.add(user)
     await db_session.commit()
+    await db_session.refresh(user)
     return user
 
 @pytest.fixture
@@ -208,6 +215,7 @@ async def manager_user(db_session: AsyncSession):
     )
     db_session.add(user)
     await db_session.commit()
+    await db_session.refresh(user)
     return user
 
 # Configure a fixture for each type of user role you want to test
@@ -238,3 +246,18 @@ def email_service():
         mock_service.send_verification_email.return_value = None
         mock_service.send_user_email.return_value = None
         return mock_service
+
+
+@pytest.fixture(autouse=True)
+def mock_minio_env_vars():
+    os.environ["MINIO_ENDPOINT"] = "localhost:9000"
+    os.environ["MINIO_ACCESS_KEY"] = "minioadmin"
+    os.environ["MINIO_SECRET_KEY"] = "minioadminy"
+    os.environ["MINIO_BUCKET_NAME"] = "user-profile-pictures"
+    os.environ["MINIO_SECURE"] = "False"
+    yield
+    del os.environ["MINIO_ENDPOINT"]
+    del os.environ["MINIO_ACCESS_KEY"]
+    del os.environ["MINIO_SECRET_KEY"]
+    del os.environ["MINIO_BUCKET_NAME"]
+    del os.environ["MINIO_SECURE"]

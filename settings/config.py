@@ -18,13 +18,12 @@ class Settings(BaseSettings):
     debug: bool = Field(default=False, description="Debug mode outputs errors and sqlalchemy queries")
     jwt_secret_key: str = "a_very_secret_key"
     jwt_algorithm: str = "HS256"
-    access_token_expire_minutes: int = 15  # 15 minutes for access token
     refresh_token_expire_minutes: int = 1440  # 24 hours for refresh token
     # Database configuration
-    database_url: str = Field(default='postgresql+asyncpg://user:password@postgres/myappdb', description="URL for connecting to the database")
+    database_url: str = Field(default='postgresql+asyncpg://user1:password@postgres/myappdb', description="URL for connecting to the database", env="DATABASE_URL")
 
     # Optional: If preferring to construct the SQLAlchemy database URL from components
-    postgres_user: str = Field(default='user', description="PostgreSQL username")
+    postgres_user: str = Field(default='user1', description="PostgreSQL username")
     postgres_password: str = Field(default='password', description="PostgreSQL password")
     postgres_server: str = Field(default='localhost', description="PostgreSQL server address")
     postgres_port: str = Field(default='5432', description="PostgreSQL port")
@@ -41,11 +40,12 @@ class Settings(BaseSettings):
     smtp_username: str = Field(default='your-mailtrap-username', description="Username for SMTP server")
     smtp_password: str = Field(default='your-mailtrap-password', description="Password for SMTP server")
     # MinIO config
-    minio_endpoint: str = Field(..., env="MINIO_ENDPOINT")
-    minio_access_key: str = Field(..., env="MINIO_ACCESS_KEY")
-    minio_secret_key: str = Field(..., env="MINIO_SECRET_KEY")
-    minio_bucket_name: str = Field(..., env="MINIO_BUCKET_NAME")
-    minio_secure: bool = Field(..., env="MINIO_SECURE")
+    minio_endpoint: str = Field(default='localhost:9000', env="MINIO_ENDPOINT")  # Provide default
+    minio_access_key: str = Field(default='minioadmin', env="MINIO_ACCESS_KEY")  # Provide default
+    minio_secret_key: str = Field(default='minioadmin', env="MINIO_SECRET_KEY")  # Provide default
+    minio_bucket_name: str = Field(default='user-profile-pictures', env="MINIO_BUCKET_NAME")  # Provide default
+    minio_secure: bool = Field(default=False, env="MINIO_SECURE")  # Default to False if not set
+
 
     class Config:
         # If your .env file is not in the root directory, adjust the path accordingly.
